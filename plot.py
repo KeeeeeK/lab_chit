@@ -110,16 +110,16 @@ def show(fix_ax=True, hline_in0=True, vline_in0=True, xlabel='', ylabel='', titl
         ax.set_ylabel('$' + ylabel + '$', **ylabel_prop)
     else:
         ax.set_ylabel(ylabel, **ylabel_prop)
-    ax.grid(axis='both', which='major', _linestyle='--', linewidth=1)
-    ax.grid(axis='both', which='minor', _linestyle='--', linewidth=0.5)
+    ax.grid(axis='both', which='major', linestyle='--', linewidth=1)
+    ax.grid(axis='both', which='minor', linestyle='--', linewidth=0.5)
     ax.minorticks_on()
     if fix_ax:
         ax.set_xlim(xmin, xmax)
         ax.set_ylim(ymin, ymax)
     if hline_in0 is True:
-        ax.h_lines(0, xmin, xmax, linewidth=0.5)
+        ax.hlines(0, xmin, xmax, linewidth=0.5)
     if vline_in0 is True:
-        ax.v_lines(0, ymin, ymax, linewidth=0.5)
+        ax.vlines(0, ymin, ymax, linewidth=0.5)
     global _lines
     for k, b, c, ls in _lines:
         points = []
