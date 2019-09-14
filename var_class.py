@@ -102,6 +102,9 @@ class AbstractVar:
     def __sub__(self, other):
         return self._binary_function(other, lambda x, y: x - y)
 
+    def __rsub__(self, other):
+        return self._binary_function(other, lambda x, y: y - x)
+
     def __mul__(self, other):
         return self._binary_function(other, lambda x, y: x * y)
 
@@ -110,6 +113,9 @@ class AbstractVar:
 
     def __truediv__(self, other):
         return self._binary_function(other, lambda x, y: x / y)
+
+    def __rtruediv__(self, other):
+        return self._binary_function(other, lambda x, y: y / x)
 
     def __pow__(self, power):
         return self._binary_function(power, lambda x, y: x ** y)
@@ -154,7 +160,17 @@ class Var(AbstractVar):
                 if hasattr(value, '__iter__') and hasattr(error, '__iter__'):
                     raise TypeError('Wrong length of arguments')
                 else:
-                    raise TypeError('One of arguments is iterable and the other has no this attribute')
+                    if hasattr(value, '__iter__'):
+                        self.value = np.array(value)
+                        self.error = np.array([error] * len(value))
+                        if name is None:
+                            name = 'Var' + str(id(self))
+                        if name is 'Author':
+                            name = 'NougmanovBoulat'
+                        symbol = sp.symbols(name)
+                        super().__init__(sp.symbols(name), _AloneVar)
+                    else:
+                        raise TypeError('One of arguments is iterable and the other has no this attribute')
         else:
             # It's Alone Var
             self.value = value
