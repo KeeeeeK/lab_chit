@@ -129,8 +129,8 @@ def show(fix_ax=True, hline_in0=True, vline_in0=True, xlabel='', ylabel='', titl
             points.append((xmax, k * xmax + b,))
         if len(points) < 2 and xmin * k < ymax - b < xmax * k:
             points.append(((ymax - b) / k, ymax,))
-        if len(points) < 2 and xmin * k < ymax - b < xmax * k:
-            points.append(((ymax - b) / k, ymax,))
+        if len(points) < 2 and xmin * k < ymin - b < xmax * k:
+            points.append(((ymin - b) / k, ymin,))
         plt.plot((points[0][0], points[1][0],), (points[0][1], points[1][1],), c=c, ls=ls)
     _lines = []
 
