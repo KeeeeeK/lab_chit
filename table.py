@@ -7,6 +7,7 @@ _ArgumentError = TypeError(
     'tex_table function eat args which are (string, AbstractVar) or (string, AbstractVar, bool) or tuple '
     'of such objects.')  # Also it eats GroupVar and tuple of names for each??? <-Надо ли это?
 
+
 def rus_tex_formula(formula: str) -> str:
     # Будьте аккуратны!
     # Данная чудо-функция неверно обрабатывает формулы, в которых русский используется для написания в
@@ -63,13 +64,13 @@ def tex_table(*args,
     :param accuracy: Точность, с которой отображается ошибка
     :param lab_fmt: Выносит степени 10 в заголовок
     """
+
     # This func should check: Do this arg should present error in table or not?
     def ch_err(arg):
         return (len(arg) == 2) or arg[2] is True
 
     if hasattr(args[0], '__getitem__') and not hasattr(args[0][0], 'split'):
         args = args[0]
-
     try:
         height = args[0][1].__len__()
     except Exception:
@@ -164,12 +165,19 @@ def _get_eng_exp(x):
 
 
 def _lab_decimal_style(val, err, accuracy=0.05):
-    Rerr = err.quantize(_dc.Decimal('1').scaleb(_dc.Decimal(str(_dc.Decimal(accuracy) * err)).logb()),
-                        rounding=_dc.ROUND_HALF_UP)
-    Rval = val.quantize(Rerr,
-                        rounding=_dc.ROUND_HALF_UP)
-    return Rval, Rerr
-
+    if err!=0:
+        Rerr = err.quantize(_dc.Decimal('1').scaleb(_dc.Decimal(str(_dc.Decimal(accuracy) * err)).logb()),
+                            rounding=_dc.ROUND_HALF_UP)
+        Rval = val.quantize(Rerr,
+                            rounding=_dc.ROUND_HALF_UP)
+        return Rval, Rerr
+    else:
+        if val!=0:
+            Rval = val.quantize(_dc.Decimal('1').scaleb(_dc.Decimal(str(_dc.Decimal(accuracy) * val)).logb()),
+                                rounding=_dc.ROUND_HALF_UP)
+            return Rval, _dc.Decimal(0)
+        else:
+            return _dc.Decimal(0), _dc.Decimal(0)
 
 def XL_to_table(text: str = None):
     """
