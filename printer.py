@@ -1,30 +1,32 @@
+import atexit as _atexit
 import tkinter as _tk
 
-
-class _Printer:
-    def __init__(self):
-        self.root = None
-        self.printable = list()
-
-    def __del__(self):
-        if len(self.printable) != 0:
-            for i, s in enumerate(self.printable):
-                text = _tk.Text(width=25, height=5, wrap=_tk.WORD)
-                text.insert(float(i), s)
-                text.pack()
-            self.root.mainloop()
+_root = None
+_printable = list()
 
 
-_p = _Printer()
+def _printf():
+    global _root, _printable
+    if len(_printable) != 0:
+        for i, s in enumerate(_printable):
+            text = _tk.Text(width=25, height=5, wrap=_tk.WORD)
+            text.insert(float(i), s)
+            text.pack()
+        _root.mainloop()
+
+
+_atexit.register(_printf)
 
 
 def printLC(string: str) -> None:
     """
     После выполнения программы выведет всё, что вы хотели напечатать
     """
-    if _p.root is None:
-        _p.root = _tk.Tk()
-    _p.printable.append(string)
+    global _root, _printable
+    if _root is None:
+        _root = _tk.Tk()
+    _printable.append(string)
+
 
 
 def get_started():
