@@ -71,7 +71,7 @@ class AbstractVar:
         self.story = sp.simplify(self.story)
 
     def __str__(self):
-        return '(' + str(self.val()) + ',' + str(self.err()) + ')'
+        return '(' + str(self.val()) + ', ' + str(self.err()) + ')'
 
     def _for_binary_operation_check_len(self, other):
         if len(self) == _AloneVar:
@@ -168,7 +168,7 @@ class Var(AbstractVar):
                         if name is 'Author':
                             name = 'NougmanovBoulat'
                         symbol = sp.symbols(name)
-                        super().__init__(sp.symbols(name), _AloneVar)
+                        super().__init__(symbol, len(value))
                     else:
                         raise TypeError('One of arguments is iterable and the other has no this attribute')
         else:
