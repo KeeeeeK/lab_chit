@@ -1,6 +1,7 @@
 import matplotlib.patches as _mp
 import matplotlib.pyplot as plt
 from lab_chit.var_class import *
+from lab_chit.mono_funcs import mean
 
 _lines = []
 
@@ -27,7 +28,7 @@ def plot(x: AbstractVar, y: AbstractVar, use_brand_new_fig=False, capsize=3, s=1
 # style_better_dermo = 'at_least_better_dermo'
 
 
-def mnk(x: AbstractVar, y: AbstractVar, style: str = 'classic_dermo', add_to_fig: bool = True, c=None, ls=None):
+def mnk(x: AbstractVar, y: AbstractVar, style: str = 'classic_dermo', add_to_fig: bool = True, c=None, ls=None, not_all=(None, None,)):
     """
     Эта функция создаёт объекты типа Var неявно! Будьте осторожны.
     С x и y всё понятно.
@@ -43,8 +44,20 @@ def mnk(x: AbstractVar, y: AbstractVar, style: str = 'classic_dermo', add_to_fig
     """
     if style is 'classic_dermo':
         # y == kx + b
-        X = x.val()
-        Y = y.val()
+        if not_all[0] is None:
+            if not_all[1] is None:
+                X = x.val()
+                Y = y.val()
+            else:
+                X = x.val()[:not_all[1]]
+                Y = y.val()[:not_all[1]]
+        else:
+            if not_all[1] is None:
+                X = x.val()[not_all[0]:]
+                Y = y.val()[not_all[0]:]
+            else:
+                X = x.val()[not_all[0]:not_all[1]]
+                Y = y.val()[not_all[0]:not_all[1]]
         k = (np.mean(X * Y) - np.mean(X) * np.mean(Y)) / (np.mean(X ** 2) - np.mean(X) ** 2)
         b = np.mean(Y) - k * np.mean(X)
         Sy = sum((Y - b - k * X) ** 2) / (len(X) - 2)
@@ -58,6 +71,12 @@ def mnk(x: AbstractVar, y: AbstractVar, style: str = 'classic_dermo', add_to_fig
         ...
     else:
         raise TypeError('Ишь чего захотел!')
+
+def mnk_through0(x:AbstractVar, y:AbstractVar,add_to_fig: bool = True, c=None, ls=None):
+    k = mean(y/x)
+    if add_to_fig:
+        line(k.value, 0, c, ls)
+        return k
 
 
 def line(k, b, c=None, ls=None, use_brand_new_fig=False):
@@ -107,9 +126,9 @@ def show(fix_ax=True, hline_in0=True, vline_in0=True, xlabel='', ylabel='', titl
     else:
         ax.set_xlabel(xlabel)
     if ylabel.rstrip() is not '' and tex_style:
-        ax.set_ylabel('$' + ylabel + '$', **ylabel_prop)
+        ax.set_ylabel('$' + ylabel + '$', ylabel_prop)
     else:
-        ax.set_ylabel(ylabel, **ylabel_prop)
+        ax.set_ylabel(ylabel, ylabel_prop)
     ax.grid(axis='both', which='major', linestyle='--', linewidth=1)
     ax.grid(axis='both', which='minor', linestyle='--', linewidth=0.5)
     ax.minorticks_on()
