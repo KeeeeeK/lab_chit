@@ -44,7 +44,7 @@ def rus_tex_formula(formula: str) -> str:
 def tex_table(*args,
               caption: str = '', numerate: bool = True,
               colors=('C0C0C0', 'EFEFEF', 'C0C0C0',), color_frequency: int = 2,
-              accuracy: float = 0.05, lab_fmt: bool = True):
+              accuracy: float = 0.2, lab_fmt: bool = True):
     """
     Проще объяснить на примере
     Есть серии измерений теплоёмкости и температуры.
@@ -120,16 +120,23 @@ def tex_table(*args,
                     table.append(['$' + '\\Delta ' + rus_tex_formula(arg[0]) + '$'])
                 NCol += 1
                 table[NCol] += Arr_of_err
-
-            #     q = tuple(map(str, tuple(zip(*(lab_decimal_style(val[i], err[i], accuracy) for i in range(height))))))
-            #
-            #     table[NCol] += list(q[0])
-            #     table.append(['$' + '\\Delta ' + rus_tex_formula(arg[0]) + '$'])
-            #     table[NCol + 1] += list(q[1])
-            #     NCol += 1
             else:
                 # table.append(['$' + rus_tex_formula(arg[0]) + '$'])
-                ...
+                val = tuple(map(lambda x: _dc.Decimal(str(x)), arg[1].val()))
+                most_common_exp = _Counter(_get_eng_exp(v) for v in val).most_common(1)[0][0]
+                if most_common_exp != 0:
+                    # Наличие ',' значит поставил ли пользователь размерность или это безразмерное число
+                    if ',' in arg[0]:
+                        table.append(['$' + rus_tex_formula(arg[0]) + '\\cdot 10^{' + str(most_common_exp) + '} $'])
+                    else:
+                        table.append(['$' + rus_tex_formula(arg[0]) + '\\cdot 10^{' + str(-most_common_exp) + '} $'])
+                else:
+                    table.append(['$' + rus_tex_formula(arg[0]) + '$'])
+                Arr_of_val = list()
+                for i in range(height):
+                    Rval, Rerr = _lab_decimal_style(val[i], 0, accuracy=accuracy)
+                    Arr_of_val += [str(float(Rval.scaleb(-most_common_exp)))]
+                table[NCol] += Arr_of_val
         else:
             table.append(['$' + rus_tex_formula(arg[0]) + '$'])
             if ch_err(arg):
@@ -218,3 +225,7 @@ def table_to_XL(table, t=True):
             ret += str(cell) + '\t'
         ret += '\n'
     return ret[:-1]
+
+def dec_alone_style(x, accuracy=0.3):
+    Rval, Rerr  = _lab_decimal_style(_dc.Decimal(x.val()), _dc.Decimal(x.err()), accuracy=accuracy)
+    return str(float(Rval)), str(float(Rerr))
