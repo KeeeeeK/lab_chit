@@ -2,7 +2,7 @@ from lab_chit.var_class import *
 
 
 def _mono_function(x, name_func: str, name_func_for_numpy: str = None,
-                  real_name: str = None):
+                   real_name: str = None):
     """
     На случай, если вам захочется сделать свою функцию, которая есть в numpy и sympy.
     """
@@ -16,6 +16,10 @@ def _mono_function(x, name_func: str, name_func_for_numpy: str = None,
         return AbstractVar(getattr(sp, name_func)(x.story), len(x))
     else:
         return getattr(np, name_func_for_numpy)(x)
+
+
+def sqrt(x):
+    return _mono_function(x, 'sqrt')
 
 
 def sin(x):
@@ -101,6 +105,8 @@ def ln(x):
 def mean(x):
     if isinstance(x, GroupVar):
         return _mono_function(x, 'mean', real_name='mean')
+    if isinstance(x, (tuple, list, np.ndarray)):
+        return np.mean(np.array(x))
     # Будьте осторожны!
     # Эта функция производит Var неявно
     # Это приводит к неточности в оценке ошибок при одновременном использовани x и mean(x)
@@ -110,6 +116,29 @@ def mean(x):
     return Var(val, err)
 
 
-_all_funcs = {'sin': sin, 'cos': cos, 'tg': tg, 'ctg': ctg, 'arctg': arctg, 'arcctg': arcctg, 'arcsin': arcsin,
-              'arccos': arccos, 'sh': sh, 'ch': ch, 'th': th, 'cth': cth, 'arcth': arcth, 'arcsh': arcch, 'exp': exp,
-              'ln': ln, 'mean': mean}
+_all_funcs = {'sqrt': sqrt, 'sin': sin, 'cos': cos, 'tg': tg, 'ctg': ctg, 'arctg': arctg, 'arcctg': arcctg,
+              'arcsin': arcsin, 'arccos': arccos, 'sh': sh, 'ch': ch, 'th': th, 'cth': cth, 'arcth': arcth,
+              'arcsh': arcch, 'exp': exp, 'ln': ln, 'mean': mean}
+
+def step(x, style: str = 'classic_dermo'):
+    if style is 'classic_dermo':
+        if len(x) == 2:
+            X = x.val()
+            Xerr = x.err()
+            return Var(X[1] - X[0], np.sqrt(Xerr[1] ** 2 + Xerr[0] ** 2))
+        if len(x) == 3:
+            X = x.val()
+            Xerr = x.err()
+            return Var(((X[2]-X[0])/2+X[1]-X[0])/2, np.sqrt(((Xerr[2]/2)**2+(Xerr[1])**2+(Xerr[0]*3/2)**2)/2)/2)
+        X = np.array(range(len(x)))
+        Y = x.val()
+        k = (np.mean(X * Y) - np.mean(X) * np.mean(Y)) / (np.mean(X ** 2) - np.mean(X) ** 2)
+        b = np.mean(Y) - k * np.mean(X)
+        Sy = sum((Y - b - k * X) ** 2) / (len(X) - 2)
+        D = len(X) * sum(X ** 2) - (sum(X)) ** 2
+        dk = np.sqrt(Sy * len(X) / D)
+        return Var(k, dk)
+    elif style is 'at_least_better_dermo':
+        ...
+    else:
+        raise TypeError('Ишь чего захотел!')
