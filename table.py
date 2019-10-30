@@ -2,6 +2,7 @@ import decimal as _dc
 from collections import Counter as _Counter
 from string import printable as _printable
 from sys import stdin as _stdin
+from numpy import array as _array
 
 _ArgumentError = TypeError(
     'tex_table function eat args which are (string, AbstractVar) or (string, AbstractVar, bool) or tuple '
@@ -105,8 +106,8 @@ def tex_table(*args,
                 Arr_of_err = list()
                 for i in range(height):
                     Rval, Rerr = _lab_decimal_style(val[i], err[i], accuracy=accuracy)
-                    Arr_of_val += [str(float(Rval.scaleb(-most_common_exp)))]
-                    Arr_of_err += [str(float(Rerr.scaleb(-most_common_exp)))]
+                    Arr_of_val += [_dec_normal(Rval.scaleb(-most_common_exp))]
+                    Arr_of_err += [_dec_normal(Rerr.scaleb(-most_common_exp))]
                 table[NCol] += Arr_of_val
                 if most_common_exp != 0:
                     # Наличие ',' значит поставил ли пользователь размерность или это безразмерное число
@@ -135,7 +136,7 @@ def tex_table(*args,
                 Arr_of_val = list()
                 for i in range(height):
                     Rval, Rerr = _lab_decimal_style(val[i], 0, accuracy=accuracy)
-                    Arr_of_val += [str(float(Rval.scaleb(-most_common_exp)))]
+                    Arr_of_val += [_dec_normal(Rval.scaleb(-most_common_exp))]
                 table[NCol] += Arr_of_val
         else:
             table.append(['$' + rus_tex_formula(arg[0]) + '$'])
@@ -147,7 +148,7 @@ def tex_table(*args,
                 table[NCol] += list(map(str, arg[1].val()))
     NCol += 1  # Отныне это число колонок без учёта нумерации (самая левая колонка)
 
-    ret = '\\begin{table}[h]' + '\n' + '\\center' + '\n'
+    ret = '\\begin{table}[ht]' + '\n' + '\\center' + '\n'
     if caption is None or False:
         pass
     else:
@@ -172,19 +173,20 @@ def _get_eng_exp(x):
 
 
 def _lab_decimal_style(val, err, accuracy=0.05):
-    if err!=0:
+    if err != 0:
         Rerr = err.quantize(_dc.Decimal('1').scaleb(_dc.Decimal(str(_dc.Decimal(accuracy) * err)).logb()),
-                            rounding=_dc.ROUND_HALF_UP)
+                            rounding=_dc.ROUND_HALF_UP).normalize()
         Rval = val.quantize(Rerr,
                             rounding=_dc.ROUND_HALF_UP)
         return Rval, Rerr
     else:
-        if val!=0:
+        if val != 0:
             Rval = val.quantize(_dc.Decimal('1').scaleb(_dc.Decimal(str(_dc.Decimal(accuracy) * val)).logb()),
-                                rounding=_dc.ROUND_HALF_UP)
+                                rounding=_dc.ROUND_HALF_UP).normalize()
             return Rval, _dc.Decimal(0)
         else:
             return _dc.Decimal(0), _dc.Decimal(0)
+
 
 def XL_to_table(text: str = None):
     """
@@ -201,10 +203,10 @@ def XL_to_table(text: str = None):
                 table[i].append(arr[i])
             arr = text.readline().rstrip()
             return table
-
-    table = tuple(map(lambda x: tuple(map(float, x.split())), text.split('\n')))
-    table = tuple(zip(*table[:-1]))
-    return table
+    table = tuple(map(lambda x: x.split('\t'), text.split('\n')))[:-1]
+    t = tuple(map(lambda x: tuple(filter(lambda y: y!='', x)), table))
+    table=_array(tuple(map(lambda x: tuple(map(float, x)),t)))
+    return transpose(table)
 
 
 def table_to_XL(table, t=True):
@@ -222,10 +224,36 @@ def table_to_XL(table, t=True):
         return ret[:-1]
     for col in table:
         for cell in col:
-            ret += str(cell) + '\t'
+            try:
+                ret += str(cell) + '\t'
+            except:
+                ret += '\t'
         ret += '\n'
     return ret[:-1]
 
+
+def _dec_normal(d):
+    return '{0:f}'.format(d)
+
 def dec_alone_style(x, accuracy=0.3):
-    Rval, Rerr  = _lab_decimal_style(_dc.Decimal(x.val()), _dc.Decimal(x.err()), accuracy=accuracy)
-    return str(float(Rval)), str(float(Rerr))
+    Rval, Rerr = _lab_decimal_style(_dc.Decimal(x.val()), _dc.Decimal(x.err()), accuracy=accuracy)
+    return _dec_normal(Rval), _dec_normal(Rerr)
+
+
+def transpose(x, nparray = True):
+    l = max(tuple(map(len, x)))
+    res=[]
+    for c in range(l):
+        res.append([])
+        for s in range(len(x)):
+            try:
+                res[c].append(x[s][c])
+            except:
+                pass
+    if nparray:
+        res = list(map(_array, res))
+    return res
+
+def lab_decimal_style(x, accuracy=0.2):
+    d = dec_alone_style(x, accuracy=accuracy)
+    return d[0]+" \\pm "+d[1]
