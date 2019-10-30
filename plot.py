@@ -6,7 +6,7 @@ from lab_chit.mono_funcs import mean
 _lines = []
 
 
-def plot(x: AbstractVar, y: AbstractVar, use_brand_new_fig=False, capsize=3, s=1, c=None, marker=None) -> None:
+def plot(x: AbstractVar, y: AbstractVar, use_brand_new_fig=False, capsize=3, s=1, c=None, marker=None, label = None) -> None:
     """
     :param capsize: Размер шляпок на крестах ошибок
     :param s: Размер точек на графике
@@ -17,8 +17,8 @@ def plot(x: AbstractVar, y: AbstractVar, use_brand_new_fig=False, capsize=3, s=1
     if (use_brand_new_fig is False) and (plt.gcf() is None) or use_brand_new_fig is True:
         plt.figure()
     axes = plt.gca()
-    axes.scatter(x.val(), y.val(), s=s, c=c, marker=marker)
-    axes.errorbar(x.val(), y.val(), x.err(), y.err(), capsize=capsize, capthick=1, fmt='none', c=c)
+    axes.scatter(x.val(), y.val(), s=s, c=c, marker=marker, label=label)
+    axes.errorbar(x=x.val(), y=y.val(), xerr=x.err(), yerr=y.err(), capsize=capsize, capthick=1, fmt='none', c=c)
 
 
 # Сейчас вы увидите очень русскую функцию. Она выполнена в русском стиле и имеет русское название
@@ -28,7 +28,8 @@ def plot(x: AbstractVar, y: AbstractVar, use_brand_new_fig=False, capsize=3, s=1
 # style_better_dermo = 'at_least_better_dermo'
 
 
-def mnk(x: AbstractVar, y: AbstractVar, style: str = 'classic_dermo', add_to_fig: bool = True, c=None, ls=None, not_all=(None, None,)):
+def mnk(x: AbstractVar, y: AbstractVar, style: str = 'classic_dermo', add_to_fig: bool = True, c=None, ls=None,
+        not_all=(None, None,), exept=(), label = None):
     """
     Эта функция создаёт объекты типа Var неявно! Будьте осторожны.
     С x и y всё понятно.
@@ -44,20 +45,8 @@ def mnk(x: AbstractVar, y: AbstractVar, style: str = 'classic_dermo', add_to_fig
     """
     if style is 'classic_dermo':
         # y == kx + b
-        if not_all[0] is None:
-            if not_all[1] is None:
-                X = x.val()
-                Y = y.val()
-            else:
-                X = x.val()[:not_all[1]]
-                Y = y.val()[:not_all[1]]
-        else:
-            if not_all[1] is None:
-                X = x.val()[not_all[0]:]
-                Y = y.val()[not_all[0]:]
-            else:
-                X = x.val()[not_all[0]:not_all[1]]
-                Y = y.val()[not_all[0]:not_all[1]]
+        X = _exept_notall(x.val(), exept, not_all)
+        Y = _exept_notall(y.val(), exept, not_all)
         k = (np.mean(X * Y) - np.mean(X) * np.mean(Y)) / (np.mean(X ** 2) - np.mean(X) ** 2)
         b = np.mean(Y) - k * np.mean(X)
         Sy = sum((Y - b - k * X) ** 2) / (len(X) - 2)
@@ -65,21 +54,38 @@ def mnk(x: AbstractVar, y: AbstractVar, style: str = 'classic_dermo', add_to_fig
         dk = np.sqrt(Sy * len(X) / D)
         db = np.sqrt(Sy * sum(X ** 2) / D)
         if add_to_fig:
-            line(k, b, c, ls)
+            line(k, b, c=c, ls=ls, label=label)
         return Var(k, dk), Var(b, db)
     elif style is 'at_least_better_dermo':
         ...
     else:
         raise TypeError('Ишь чего захотел!')
 
-def mnk_through0(x:AbstractVar, y:AbstractVar,add_to_fig: bool = True, c=None, ls=None):
-    k = mean(y/x)
+
+def _exept_notall(x, ex, notall):
+    x = list(x)
+    exept=[]
+    notall = list(notall)
+    if notall[0] is None:
+        notall[0]=0
+    if notall[1] is None:
+        notall[1]=len(x)
+    for i in ex:
+        if i in range(notall[0], notall[1]):
+            exept.append(i-notall[0])
+    for i in exept:
+        x.pop(i)
+    return np.array(x)
+
+
+def mnk_through0(x: AbstractVar, y: AbstractVar, add_to_fig: bool = True, c=None, ls=None, label=None):
+    k = mean(y / x)
     if add_to_fig:
-        line(k.value, 0, c, ls)
-        return k
+        line(k.value, 0, c=c, ls=ls, label=label)
+    return k
 
 
-def line(k, b, c=None, ls=None, use_brand_new_fig=False):
+def line(k, b, c=None, ls=None, use_brand_new_fig=False, label=None):
     """
     Строит прямую вида kx+b
     Параметры c (color) и ls (linestyle) для параметров рисования прямой. Допустимые значения есть в библиотеке
@@ -87,7 +93,8 @@ def line(k, b, c=None, ls=None, use_brand_new_fig=False):
     """
     if (use_brand_new_fig is False) and (plt.gcf() is None) or use_brand_new_fig is True:
         plt.figure()
-    _lines.append((k, b, c, ls,))
+    _lines.append((k, b, c, ls, label,))
+
 
 def get_lines():
     """
@@ -97,7 +104,7 @@ def get_lines():
 
 
 def show(fix_ax=True, hline_in0=True, vline_in0=True, xlabel='', ylabel='', title='', tex_style=True,
-         label_near_arrow=True):
+         label_near_arrow=True, xlabel_coords=(1.06, -0.07), ylabel_coords=(-0.1,1)):
     """
     :param fix_ax: Фиксирует оси так, чтобы были видны все точки, но не обязательно все линии.
     :param hline_in0: Рисует прямую x=0
@@ -113,7 +120,8 @@ def show(fix_ax=True, hline_in0=True, vline_in0=True, xlabel='', ylabel='', titl
     ymin, ymax = ax.get_ylim()
     if label_near_arrow:
         ylabel_prop = dict(rotation=0, y=1)
-        ax.xaxis.set_label_coords(1.06, -0.02)
+        ax.xaxis.set_label_coords(*xlabel_coords)
+        ax.yaxis.set_label_coords(*ylabel_coords)
     else:
         ylabel_prop = {}
     if title.rstrip() is not '' and tex_style:
@@ -140,7 +148,7 @@ def show(fix_ax=True, hline_in0=True, vline_in0=True, xlabel='', ylabel='', titl
     if vline_in0 is True:
         ax.vlines(0, ymin, ymax, linewidth=0.5)
     global _lines
-    for k, b, c, ls in _lines:
+    for k, b, c, ls, label in _lines:
         points = []
         if ymin <= k * xmin + b <= ymax:
             points.append((xmin, k * xmin + b,))
@@ -150,11 +158,12 @@ def show(fix_ax=True, hline_in0=True, vline_in0=True, xlabel='', ylabel='', titl
             points.append(((ymax - b) / k, ymax,))
         if len(points) < 2 and xmin * k < ymin - b < xmax * k:
             points.append(((ymin - b) / k, ymin,))
-        plt.plot((points[0][0], points[1][0],), (points[0][1], points[1][1],), c=c, ls=ls)
+        plt.plot((points[0][0], points[1][0],), (points[0][1], points[1][1],), c=c, ls=ls, label=label)
     _lines = []
 
     ax.annotate('', xy=(1.05, 0), xycoords='axes fraction', xytext=(-0.03, 0),
                 arrowprops=dict(arrowstyle=_mp.ArrowStyle.CurveB(head_length=1), color='black'))
     ax.annotate('', xy=(0, 1.06), xycoords='axes fraction', xytext=(0, -0.03),
                 arrowprops=dict(arrowstyle=_mp.ArrowStyle.CurveB(head_length=1), color='black'))
+    plt.legend()
     plt.show()
