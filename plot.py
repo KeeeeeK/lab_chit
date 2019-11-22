@@ -165,5 +165,6 @@ def show(fix_ax=True, hline_in0=True, vline_in0=True, xlabel='', ylabel='', titl
                 arrowprops=dict(arrowstyle=_mp.ArrowStyle.CurveB(head_length=1), color='black'))
     ax.annotate('', xy=(0, 1.06), xycoords='axes fraction', xytext=(0, -0.03),
                 arrowprops=dict(arrowstyle=_mp.ArrowStyle.CurveB(head_length=1), color='black'))
-    plt.legend()
+    if len(ax.get_legend_handles_labels()[1])!=0:
+        plt.legend()
     plt.show()
